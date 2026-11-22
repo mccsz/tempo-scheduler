@@ -21,6 +21,9 @@ async function inspect(directory) {
       continue;
     }
     const source = await readFile(path, 'utf8');
+    if (path.endsWith('.ps1') && /[^\x00-\x7f]/.test(source) && !source.startsWith('\uFEFF')) {
+      throw new Error(`PowerShell 5.1 requires UTF-8 with BOM for non-ASCII text: ${path}`);
+    }
     const lines = source.split(/\r?\n/);
     for (let index = 0; index < lines.length; index++) {
       const line = lines[index].trim();

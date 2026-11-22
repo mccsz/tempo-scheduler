@@ -1,4 +1,4 @@
-param(
+﻿param(
 [ValidateRange(1,6)][int]$Count = 6,
 [ValidateRange(1000,2000000)][int]$Iterations = 2000000,
 [ValidateRange(0,120)][int]$CancelAfterSeconds = 0,
