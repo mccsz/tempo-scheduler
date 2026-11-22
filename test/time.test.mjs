@@ -13,7 +13,7 @@ test('clock deadlines use plan start, minutes and explicit days', () => {
 
 test('switching display preserves existing fractional and multi-day deadlines', () => {
   for (const start of ['00:00', '09:00', '23:59']) {
-    for (const original of [.001, .123, .999, 8, 24, 60, 100000]) {
+    for (const original of [0.001, 0.123, 0.999, 8, 24, 60, 100000]) {
       const { time, day } = clockParts(original, start);
       assert.equal(deadlineHours(time, day, start, original), original);
     }
@@ -22,7 +22,11 @@ test('switching display preserves existing fractional and multi-day deadlines', 
 });
 
 test('invalid clock and day values cannot silently become valid deadlines', () => {
-  for (const value of ['', '24:00', '12:60', '9:00', null]) assert.ok(Number.isNaN(clockMinutes(value)));
-  for (const day of [0, 1.5, 4169, NaN]) assert.ok(Number.isNaN(deadlineHours('14:00', day, '09:00')));
+  for (const value of ['', '24:00', '12:60', '9:00', null]) {
+    assert.ok(Number.isNaN(clockMinutes(value)));
+  }
+  for (const day of [0, 1.5, 4169, NaN]) {
+    assert.ok(Number.isNaN(deadlineHours('14:00', day, '09:00')));
+  }
   assert.ok(Number.isNaN(deadlineHours('', 1, '09:00')));
 });

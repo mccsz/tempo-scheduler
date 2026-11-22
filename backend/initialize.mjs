@@ -5,10 +5,18 @@ import { hashPassword } from './auth.mjs';
 import { config } from './config.mjs';
 
 export async function seedDemo() {
-  if (!config.seedDemo) return;
+  if (!config.seedDemo) {
+    return;
+  }
   const passwordHash = await hashPassword('TempoDemo2026!');
-  for (const [name, email, role] of [['Адміністратор','admin@tempo.local','admin'],['Студент','student@tempo.local','user']]) {
-    await query('INSERT INTO users(id,name,email,password_hash,role) VALUES($1,$2,$3,$4,$5) ON CONFLICT(email) DO NOTHING', [randomUUID(),name,email,passwordHash,role]);
+  for (const [name, email, role] of [
+    ['Адміністратор', 'admin@tempo.local', 'admin'],
+    ['Студент', 'student@tempo.local', 'user']
+  ]) {
+    await query(
+      'INSERT INTO users(id,name,email,password_hash,role) VALUES($1,$2,$3,$4,$5) ON CONFLICT(email) DO NOTHING',
+      [randomUUID(), name, email, passwordHash, role]
+    );
   }
 }
 

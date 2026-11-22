@@ -11,7 +11,10 @@ for path in root.rglob('*.py'):
         continue
     source = path.read_text(encoding='utf-8-sig')
     ast.parse(source, filename=str(path))
-    if any(token.type == tokenize.COMMENT for token in tokenize.generate_tokens(io.StringIO(source).readline)):
+    if any(
+        token.type == tokenize.COMMENT
+        for token in tokenize.generate_tokens(io.StringIO(source).readline)
+    ):
         raise ValueError(f'Source comment: {path}')
     count += 1
 print(f'Verified {count} Python files: valid syntax, no source comments.')

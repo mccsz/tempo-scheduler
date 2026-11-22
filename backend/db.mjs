@@ -2,8 +2,13 @@ import pg from 'pg';
 import { readFile } from 'node:fs/promises';
 import { config } from './config.mjs';
 
-export const pool = new pg.Pool({ connectionString: config.databaseUrl, max: 12, connectionTimeoutMillis: 5000, idleTimeoutMillis: 10000 });
-pool.on('error', error => console.error('PostgreSQL pool:', error.message));
+export const pool = new pg.Pool({
+  connectionString: config.databaseUrl,
+  max: 12,
+  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 10000
+});
+pool.on('error', (error) => console.error('PostgreSQL pool:', error.message));
 export const query = (text, params) => pool.query(text, params);
 
 export async function initializeDatabase() {

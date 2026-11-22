@@ -1,136 +1,248 @@
 <!doctype html>
 <html lang="uk">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#193c32">
-  <title>Tempo — архітектура</title>
-  <style>
-    *{box-sizing:border-box}
-    body{margin:0;background:#f4f6ef;color:#193c32;font:16px/1.7 "Segoe UI",Arial,sans-serif}
-    main{width:calc(100% - 48px);max-width:1440px;margin:32px auto 64px}
-    a{color:#216a4c;text-underline-offset:3px}
-    nav,.actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
-    nav{justify-content:space-between;margin-bottom:38px}
-    button,.button{display:inline-flex;align-items:center;justify-content:center;border:1px solid #bdd0c2;border-radius:9px;padding:10px 16px;background:#fff;color:#193c32;font:inherit;text-decoration:none;cursor:pointer}
-    button:hover,.button:hover{background:#edf3e9}
-    .eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;color:#6b806d}
-    h1{font-size:clamp(32px,4vw,48px);line-height:1.15;letter-spacing:-.025em;margin:10px 0 18px}
-    h2{font-size:24px;line-height:1.3;margin:0 0 16px}
-    h3{font-size:18px;line-height:1.4;margin:0 0 8px}
-    p{margin:10px 0}
-    .lead{font-size:18px;max-width:1000px;color:#526c60;margin-bottom:26px}
-    figure{margin:0 0 32px}
-    .diagram-stage{overflow-x:auto;border:1px solid #d7e1d2;border-radius:24px;background:#f4f6ef}
-    .diagram-stage:focus-visible{outline:3px solid #91ae71;outline-offset:3px}
-    .diagram{display:block;width:100%;min-width:1040px;height:auto}
-    figcaption{color:#61775f;font-size:14px;margin:10px 4px 0}
-    .flow-section{margin:34px 0}
-    .flow-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;list-style:none;padding:0;margin:0}
-    .flow-steps li{padding:22px;background:#fff;border:1px solid #dfe6d7;border-radius:16px}
-    .step-number{display:block;color:#789258;font-weight:650;font-size:24px;line-height:1;margin-bottom:15px}
-    .flow-steps p{font-size:15px;line-height:1.65;color:#526c60;margin:0}
-    .details-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}
-    section.card,details{background:#fff;padding:28px 30px;border:1px solid #dfe6d7;border-radius:18px}
-    section.card p{color:#425e50}
-    ul,ol{padding-left:23px}
-    li{margin:7px 0}
-    code{background:#edf3e9;padding:2px 6px;border-radius:5px;font:14px/1.5 Consolas,monospace;overflow-wrap:anywhere}
-    .table-scroll{overflow-x:auto}
-    table{border-collapse:collapse;width:100%;font-size:15px}
-    th,td{text-align:left;vertical-align:top;padding:12px 10px;border-bottom:1px solid #e3e9dd}
-    th{color:#5f765e;font-weight:600}
-    th:first-child,td:first-child{padding-left:0;white-space:nowrap}
-    .footnote{font-size:14px;color:#61775f}
-    details{margin-top:20px}
-    summary{font-size:18px;font-weight:600;cursor:pointer}
-    details[open] summary{margin-bottom:18px}
-    pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#183d31;color:#e1eddc;padding:24px;border-radius:12px;font:14px/1.65 Consolas,monospace}
-    footer{color:#61775f;font-size:14px;margin-top:28px}
-    @media(max-width:1100px){.flow-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media(max-width:760px){main{width:calc(100% - 28px);margin-top:20px}nav{align-items:flex-start;gap:16px;margin-bottom:30px}.actions{gap:8px}.button,button{font-size:14px;padding:10px 12px}.lead{font-size:16px}.diagram-stage{border-radius:16px}.flow-steps{grid-template-columns:1fr 1fr}.flow-steps li{padding:18px}.details-grid{grid-template-columns:1fr}section.card,details{padding:22px}h2{font-size:22px}}
-    @media(max-width:420px){.flow-steps{grid-template-columns:1fr}.flow-steps li{padding:18px 20px}.step-number{font-size:21px;margin-bottom:10px}}
-    @media print{body{background:#fff;color:#193c32}main{width:100%;max-width:none;margin:0}nav,.eyebrow,.actions,figcaption{display:none}h1{font-size:28px}.lead{font-size:14px}.diagram-stage{border:0;overflow:visible}.diagram{min-width:0;width:100%}figure{break-inside:avoid;break-after:page}.flow-steps{grid-template-columns:repeat(3,minmax(0,1fr))}.details-grid{grid-template-columns:1fr}section.card,details,.flow-steps li{break-inside:avoid}section.card,details{padding:20px}a{color:inherit}}
-  </style>
-</head>
-<body>
-  <main>
-    <nav aria-label="Навігація сторінки">
-      <a href="/">← До Tempo</a>
-      <div class="actions">
-        <a class="button" href="/assets/architecture.svg" target="_blank" rel="noopener">Відкрити схему окремо ↗</a>
-        <button type="button" onclick="window.print()">Друк / PDF</button>
-      </div>
-    </nav>
-    <header>
-      <div class="eyebrow">Архітектура системи</div>
-      <h1>Як працює Tempo</h1>
-      <p class="lead">Браузер надсилає план, API ставить розрахунок у чергу, а воркери шукають кращий розклад. Нижче — хто за що відповідає і як між ними рухаються дані.</p>
-    </header>
-    <figure aria-labelledby="diagram-caption">
-      <div class="diagram-stage" role="region" aria-label="Велика схема архітектури, можна прокручувати вбік" tabindex="0">
-        <img class="diagram" src="/assets/architecture.svg" width="1440" height="1530" alt="Браузер спілкується з Python-балансером, той — із двома Express API. API і воркери використовують спільну PostgreSQL. Воркери запускають дочірні процеси оптимізації. Autoscaler і Supervisor керують резервом до чотирьох воркерів.">
-      </div>
-      <figcaption id="diagram-caption">Суцільні стрілки показують обмін даними, пунктир — керування воркерами. На вузькому екрані схему можна гортати вбік або відкрити окремо кнопкою вгорі.</figcaption>
-    </figure>
-    <section class="flow-section" aria-labelledby="flow-heading">
-      <h2 id="flow-heading">Шлях одного розрахунку</h2>
-      <ol class="flow-steps">
-        <li><span class="step-number">01</span><h3>Ти задаєш план</h3><p>Вводиш задачі, дедлайни, залежності та доступних виконавців.</p></li>
-        <li><span class="step-number">02</span><h3>API перевіряє дані</h3><p>Балансер обирає API. Той перевіряє вхід, параметри й ліміти.</p></li>
-        <li><span class="step-number">03</span><h3>Розрахунок у черзі</h3><p>Параметри зберігаються в PostgreSQL. Якщо воркери зайняті, показується очікування.</p></li>
-        <li><span class="step-number">04</span><h3>Воркер обчислює</h3><p>Забирає вільний розрахунок і запускає Python-оптимізатор в окремому процесі.</p></li>
-        <li><span class="step-number">05</span><h3>Результат у браузері</h3><p>Прогрес і готовий план проходять через API та балансер до діаграми Ганта.</p></li>
-      </ol>
-    </section>
-    <div class="details-grid">
-      <section class="card">
-        <h2>Що роблять балансер і два API</h2>
-        <p><strong>Python-балансер</strong> — єдина точка входу. За правилом <code>least_conn</code> він обирає API з меншою кількістю активних запитів. Якщо значення однакові, сервери чергуються.</p>
-        <p><strong>API_1 та API_2</strong> мають однаковий код на Node.js та Express. Вони перевіряють користувача, створюють розрахунки й повертають історію та результати. Обидва працюють зі спільною базою й ключем токенів.</p>
-        <p class="footnote">Відкрите з’єднання для прогресу теж враховується балансером. Важкий пошук розкладу виконують воркери.</p>
-      </section>
-      <section class="card">
-        <h2>Що зберігає PostgreSQL</h2>
-        <div class="table-scroll">
-          <table><thead><tr><th scope="col">Таблиця</th><th scope="col">Що в ній</th></tr></thead><tbody>
-            <tr><td><code>users</code></td><td>Користувачі, хеші паролів і ролі.</td></tr>
-            <tr><td><code>jobs</code></td><td>Черга, вхідні параметри, статус, прогрес і результат кожного розрахунку.</td></tr>
-            <tr><td><code>nodes</code></td><td>Стан API, балансера й воркерів, їхні CPU та пам’ять.</td></tr>
-            <tr><td><code>settings</code></td><td>Налаштування, зокрема потрібна кількість воркерів.</td></tr>
-          </tbody></table>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#193c32" />
+    <title>Tempo — архітектура</title>
+    <style>
+      *{box-sizing:border-box}
+      body{margin:0;background:#f4f6ef;color:#193c32;font:16px/1.7 "Segoe UI",Arial,sans-serif}
+      main{width:calc(100% - 48px);max-width:1440px;margin:32px auto 64px}
+      a{color:#216a4c;text-underline-offset:3px}
+      nav,.actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+      nav{justify-content:space-between;margin-bottom:38px}
+      button,.button{display:inline-flex;align-items:center;justify-content:center;border:1px solid #bdd0c2;border-radius:9px;padding:10px 16px;background:#fff;color:#193c32;font:inherit;text-decoration:none;cursor:pointer}
+      button:hover,.button:hover{background:#edf3e9}
+      .eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;color:#6b806d}
+      h1{font-size:clamp(32px,4vw,48px);line-height:1.15;letter-spacing:-.025em;margin:10px 0 18px}
+      h2{font-size:24px;line-height:1.3;margin:0 0 16px}
+      h3{font-size:18px;line-height:1.4;margin:0 0 8px}
+      p{margin:10px 0}
+      .lead{font-size:18px;max-width:1000px;color:#526c60;margin-bottom:26px}
+      figure{margin:0 0 32px}
+      .diagram-stage{overflow-x:auto;border:1px solid #d7e1d2;border-radius:24px;background:#f4f6ef}
+      .diagram-stage:focus-visible{outline:3px solid #91ae71;outline-offset:3px}
+      .diagram{display:block;width:100%;min-width:1040px;height:auto}
+      figcaption{color:#61775f;font-size:14px;margin:10px 4px 0}
+      .flow-section{margin:34px 0}
+      .flow-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;list-style:none;padding:0;margin:0}
+      .flow-steps li{padding:22px;background:#fff;border:1px solid #dfe6d7;border-radius:16px}
+      .step-number{display:block;color:#789258;font-weight:650;font-size:24px;line-height:1;margin-bottom:15px}
+      .flow-steps p{font-size:15px;line-height:1.65;color:#526c60;margin:0}
+      .details-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}
+      section.card,details{background:#fff;padding:28px 30px;border:1px solid #dfe6d7;border-radius:18px}
+      section.card p{color:#425e50}
+      ul,ol{padding-left:23px}
+      li{margin:7px 0}
+      code{background:#edf3e9;padding:2px 6px;border-radius:5px;font:14px/1.5 Consolas,monospace;overflow-wrap:anywhere}
+      .table-scroll{overflow-x:auto}
+      table{border-collapse:collapse;width:100%;font-size:15px}
+      th,td{text-align:left;vertical-align:top;padding:12px 10px;border-bottom:1px solid #e3e9dd}
+      th{color:#5f765e;font-weight:600}
+      th:first-child,td:first-child{padding-left:0;white-space:nowrap}
+      .footnote{font-size:14px;color:#61775f}
+      details{margin-top:20px}
+      summary{font-size:18px;font-weight:600;cursor:pointer}
+      details[open] summary{margin-bottom:18px}
+      pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#183d31;color:#e1eddc;padding:24px;border-radius:12px;font:14px/1.65 Consolas,monospace}
+      footer{color:#61775f;font-size:14px;margin-top:28px}
+      @media(max-width:1100px){.flow-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
+      @media(max-width:760px){main{width:calc(100% - 28px);margin-top:20px}nav{align-items:flex-start;gap:16px;margin-bottom:30px}.actions{gap:8px}.button,button{font-size:14px;padding:10px 12px}.lead{font-size:16px}.diagram-stage{border-radius:16px}.flow-steps{grid-template-columns:1fr 1fr}.flow-steps li{padding:18px}.details-grid{grid-template-columns:1fr}section.card,details{padding:22px}h2{font-size:22px}}
+      @media(max-width:420px){.flow-steps{grid-template-columns:1fr}.flow-steps li{padding:18px 20px}.step-number{font-size:21px;margin-bottom:10px}}
+      @media print{body{background:#fff;color:#193c32}main{width:100%;max-width:none;margin:0}nav,.eyebrow,.actions,figcaption{display:none}h1{font-size:28px}.lead{font-size:14px}.diagram-stage{border:0;overflow:visible}.diagram{min-width:0;width:100%}figure{break-inside:avoid;break-after:page}.flow-steps{grid-template-columns:repeat(3,minmax(0,1fr))}.details-grid{grid-template-columns:1fr}section.card,details,.flow-steps li{break-inside:avoid}section.card,details{padding:20px}a{color:inherit}}
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav aria-label="Навігація сторінки">
+        <a href="/">← До Tempo</a>
+        <div class="actions">
+          <a class="button" href="/assets/architecture.svg" target="_blank" rel="noopener"
+            >Відкрити схему окремо ↗</a
+          >
+          <button type="button" onclick="window.print()">Друк / PDF</button>
         </div>
-        <p class="footnote">Черга повністю зберігається в PostgreSQL. Redis і RabbitMQ не використовуються.</p>
+      </nav>
+      <header>
+        <div class="eyebrow">Архітектура системи</div>
+        <h1>Як працює Tempo</h1>
+        <p class="lead"
+          >Браузер надсилає план, API ставить розрахунок у чергу, а воркери шукають кращий розклад.
+          Нижче — хто за що відповідає і як між ними рухаються дані.</p
+        >
+      </header>
+      <figure aria-labelledby="diagram-caption">
+        <div
+          class="diagram-stage"
+          role="region"
+          aria-label="Велика схема архітектури, можна прокручувати вбік"
+          tabindex="0"
+        >
+          <img
+            class="diagram"
+            src="/assets/architecture.svg"
+            width="1440"
+            height="1530"
+            alt="Браузер спілкується з Python-балансером, той — із двома Express API. API і воркери використовують спільну PostgreSQL. Воркери запускають дочірні процеси оптимізації. Autoscaler і Supervisor керують резервом до чотирьох воркерів."
+          />
+        </div>
+        <figcaption id="diagram-caption"
+          >Суцільні стрілки показують обмін даними, пунктир — керування воркерами. На вузькому
+          екрані схему можна гортати вбік або відкрити окремо кнопкою вгорі.</figcaption
+        >
+      </figure>
+      <section class="flow-section" aria-labelledby="flow-heading">
+        <h2 id="flow-heading">Шлях одного розрахунку</h2>
+        <ol class="flow-steps">
+          <li
+            ><span class="step-number">01</span><h3>Ти задаєш план</h3
+            ><p>Вводиш задачі, дедлайни, залежності та доступних виконавців.</p></li
+          >
+          <li
+            ><span class="step-number">02</span><h3>API перевіряє дані</h3
+            ><p>Балансер обирає API. Той перевіряє вхід, параметри й ліміти.</p></li
+          >
+          <li
+            ><span class="step-number">03</span><h3>Розрахунок у черзі</h3
+            ><p
+              >Параметри зберігаються в PostgreSQL. Якщо воркери зайняті, показується очікування.</p
+            ></li
+          >
+          <li
+            ><span class="step-number">04</span><h3>Воркер обчислює</h3
+            ><p>Забирає вільний розрахунок і запускає Python-оптимізатор в окремому процесі.</p></li
+          >
+          <li
+            ><span class="step-number">05</span><h3>Результат у браузері</h3
+            ><p>Прогрес і готовий план проходять через API та балансер до діаграми Ганта.</p></li
+          >
+        </ol>
       </section>
-      <section class="card">
-        <h2>Воркер і його обчислення</h2>
-        <p>Воркер бере один вільний розрахунок із черги та запускає дочірній Python-процес. У ньому оптимізатор шукає кращий порядок задач і розподіл між виконавцями.</p>
-        <p>Основний воркер записує прогрес у базу, перевіряє скасування та контролює тайм-аут. API читає стан приблизно кожні 750 мс й передає зміни браузеру через <strong>SSE</strong> — тривале з’єднання для оновлень.</p>
-        <p class="footnote">12 задач і 3 виконавці у формі — це один розрахунок, який обробляє один воркер. Виконавці в плані — люди або обладнання, чию роботу ми плануємо.</p>
-      </section>
-      <section class="card">
-        <h2>Як з’являються додаткові воркери</h2>
-        <p><strong>Autoscaler</strong> оцінює чергу й визначає потрібну кількість: від двох до чотирьох. Значення зберігається в <code>settings</code>.</p>
-        <p><strong>Supervisor</strong> читає це налаштування та запускає резервні процеси <code>WORKER_3</code> і <code>WORKER_4</code>. Коли попит знижується, приблизно через 20 секунд ціль повертається до двох. Резерв завершує поточну роботу перед виходом.</p>
-        <p class="footnote">Наприклад, із шести важких розрахунків чотири виконуються, а два очікують у черзі.</p>
-      </section>
-      <section class="card">
-        <h2>Як оптимізується розклад</h2>
-        <p>Спочатку будується допустимий початковий план. Потім імітація відпалу перевіряє інші порядки задач і призначення виконавців, зберігаючи найкращий знайдений варіант.</p>
-        <p>Один виконавець робить одну задачу за раз. Залежна задача починається після завершення всіх попередніх. Ціль: <code>тривалість плану + 2 × сумарне запізнення</code>.</p>
-        <p class="footnote">Глобальний оптимум не гарантується. Час рахується безперервно; години на кшталт 14:00 є способом відображення відліку від початку плану.</p>
-      </section>
-      <section class="card">
-        <h2>Як це запущено зараз</h2>
-        <p>Локально компоненти працюють окремими процесами <strong>на одному комп’ютері</strong>. Браузер відкриває вхід балансера: HTTP <code>8088</code> або HTTPS <code>8443</code> за наявності сертифіката. API використовують порти <code>3101</code> і <code>3102</code>.</p>
-        <p>Панель «Стан системи» показує живі показники API, балансера та воркерів. Ця сторінка пояснює їхню будову й зв’язки.</p>
-        <p class="footnote">Docker є альтернативним способом запуску. У поточній Docker-конфігурації чотири контейнери воркерів створюються заздалегідь; нові контейнери автоматично не створюються.</p>
-      </section>
-    </div>
-    <details>
-      <summary>Трохи глибше: черга, ліміти та відновлення</summary>
-      <p>Воркер одним SQL-запитом змінює статус вільного розрахунку на <code>running</code>. <code>FOR UPDATE SKIP LOCKED</code> дозволяє пропускати записи, які вже забирає інший воркер.</p>
-      <pre>UPDATE jobs AS job
+      <div class="details-grid">
+        <section class="card">
+          <h2>Що роблять балансер і два API</h2>
+          <p
+            ><strong>Python-балансер</strong> — єдина точка входу. За правилом
+            <code>least_conn</code> він обирає API з меншою кількістю активних запитів. Якщо
+            значення однакові, сервери чергуються.</p
+          >
+          <p
+            ><strong>API_1 та API_2</strong> мають однаковий код на Node.js та Express. Вони
+            перевіряють користувача, створюють розрахунки й повертають історію та результати. Обидва
+            працюють зі спільною базою й ключем токенів.</p
+          >
+          <p class="footnote"
+            >Відкрите з’єднання для прогресу теж враховується балансером. Важкий пошук розкладу
+            виконують воркери.</p
+          >
+        </section>
+        <section class="card">
+          <h2>Що зберігає PostgreSQL</h2>
+          <div class="table-scroll">
+            <table
+              ><thead
+                ><tr><th scope="col">Таблиця</th><th scope="col">Що в ній</th></tr></thead
+              ><tbody>
+                <tr
+                  ><td><code>users</code></td
+                  ><td>Користувачі, хеші паролів і ролі.</td></tr
+                >
+                <tr
+                  ><td><code>jobs</code></td
+                  ><td
+                    >Черга, вхідні параметри, статус, прогрес і результат кожного розрахунку.</td
+                  ></tr
+                >
+                <tr
+                  ><td><code>nodes</code></td
+                  ><td>Стан API, балансера й воркерів, їхні CPU та пам’ять.</td></tr
+                >
+                <tr
+                  ><td><code>settings</code></td
+                  ><td>Налаштування, зокрема потрібна кількість воркерів.</td></tr
+                >
+              </tbody></table
+            >
+          </div>
+          <p class="footnote"
+            >Черга повністю зберігається в PostgreSQL. Redis і RabbitMQ не використовуються.</p
+          >
+        </section>
+        <section class="card">
+          <h2>Воркер і його обчислення</h2>
+          <p
+            >Воркер бере один вільний розрахунок із черги та запускає дочірній Python-процес. У
+            ньому оптимізатор шукає кращий порядок задач і розподіл між виконавцями.</p
+          >
+          <p
+            >Основний воркер записує прогрес у базу, перевіряє скасування та контролює тайм-аут. API
+            читає стан приблизно кожні 750 мс й передає зміни браузеру через <strong>SSE</strong> —
+            тривале з’єднання для оновлень.</p
+          >
+          <p class="footnote"
+            >12 задач і 3 виконавці у формі — це один розрахунок, який обробляє один воркер.
+            Виконавці в плані — люди або обладнання, чию роботу ми плануємо.</p
+          >
+        </section>
+        <section class="card">
+          <h2>Як з’являються додаткові воркери</h2>
+          <p
+            ><strong>Autoscaler</strong> оцінює чергу й визначає потрібну кількість: від двох до
+            чотирьох. Значення зберігається в <code>settings</code>.</p
+          >
+          <p
+            ><strong>Supervisor</strong> читає це налаштування та запускає резервні процеси
+            <code>WORKER_3</code> і <code>WORKER_4</code>. Коли попит знижується, приблизно через 20
+            секунд ціль повертається до двох. Резерв завершує поточну роботу перед виходом.</p
+          >
+          <p class="footnote"
+            >Наприклад, із шести важких розрахунків чотири виконуються, а два очікують у черзі.</p
+          >
+        </section>
+        <section class="card">
+          <h2>Як оптимізується розклад</h2>
+          <p
+            >Спочатку будується допустимий початковий план. Потім імітація відпалу перевіряє інші
+            порядки задач і призначення виконавців, зберігаючи найкращий знайдений варіант.</p
+          >
+          <p
+            >Один виконавець робить одну задачу за раз. Залежна задача починається після завершення
+            всіх попередніх. Ціль: <code>тривалість плану + 2 × сумарне запізнення</code>.</p
+          >
+          <p class="footnote"
+            >Глобальний оптимум не гарантується. Час рахується безперервно; години на кшталт 14:00 є
+            способом відображення відліку від початку плану.</p
+          >
+        </section>
+        <section class="card">
+          <h2>Як це запущено зараз</h2>
+          <p
+            >Локально компоненти працюють окремими процесами <strong>на одному комп’ютері</strong>.
+            Браузер відкриває вхід балансера: HTTP <code>8088</code> або HTTPS <code>8443</code> за
+            наявності сертифіката. API використовують порти <code>3101</code> і
+            <code>3102</code>.</p
+          >
+          <p
+            >Панель «Стан системи» показує живі показники API, балансера та воркерів. Ця сторінка
+            пояснює їхню будову й зв’язки.</p
+          >
+          <p class="footnote"
+            >Docker є альтернативним способом запуску. У поточній Docker-конфігурації чотири
+            контейнери воркерів створюються заздалегідь; нові контейнери автоматично не
+            створюються.</p
+          >
+        </section>
+      </div>
+      <details>
+        <summary>Трохи глибше: черга, ліміти та відновлення</summary>
+        <p
+          >Воркер одним SQL-запитом змінює статус вільного розрахунку на <code>running</code>.
+          <code>FOR UPDATE SKIP LOCKED</code> дозволяє пропускати записи, які вже забирає інший
+          воркер.</p
+        >
+        <pre>
+UPDATE jobs AS job
 SET status = 'running', worker_id = %s, attempts = attempts + 1
 FROM (
   SELECT id FROM jobs
@@ -140,11 +252,20 @@ FROM (
   LIMIT 1
 ) AS next
 WHERE job.id = next.id
-RETURNING job.*;</pre>
-      <p>Перевірка ліміту активних розрахунків проходить у транзакції з блокуванням рядка користувача. Запис результату перевіряє поточний статус, воркера та номер спроби, щоб пізній результат не перезаписав скасований або повторно запущений розрахунок.</p>
-      <p>Типові межі: 80 задач, 8 виконавців, 2 млн ітерацій і 6 активних розрахунків на користувача. Тайм-аут — 120 секунд. Після втрати heartbeat воркера розрахунок можна повернути в чергу; максимум три спроби.</p>
-    </details>
-    <footer>Tempo · оптимізація розкладу та розподілу задач між виконавцями</footer>
-  </main>
-</body>
+RETURNING job.*;</pre
+        >
+        <p
+          >Перевірка ліміту активних розрахунків проходить у транзакції з блокуванням рядка
+          користувача. Запис результату перевіряє поточний статус, воркера та номер спроби, щоб
+          пізній результат не перезаписав скасований або повторно запущений розрахунок.</p
+        >
+        <p
+          >Типові межі: 80 задач, 8 виконавців, 2 млн ітерацій і 6 активних розрахунків на
+          користувача. Тайм-аут — 120 секунд. Після втрати heartbeat воркера розрахунок можна
+          повернути в чергу; максимум три спроби.</p
+        >
+      </details>
+      <footer>Tempo · оптимізація розкладу та розподілу задач між виконавцями</footer>
+    </main>
+  </body>
 </html>

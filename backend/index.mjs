@@ -132,11 +132,14 @@ async function registerUser(req, res) {
   const passwordHash = await hashPassword(password);
 
   try {
-    const result = await query(`
+    const result = await query(
+      `
       INSERT INTO users(id, name, email, password_hash)
       VALUES($1, $2, $3, $4)
       RETURNING id, name, email, role
-    `, [randomUUID(), name, email, passwordHash]);
+    `,
+      [randomUUID(), name, email, passwordHash]
+    );
 
     const user = result.rows[0];
     res.status(201).json({ user, token: createToken(user) });
@@ -159,7 +162,7 @@ async function loginUser(req, res) {
   const result = await query('SELECT * FROM users WHERE email=$1', [email]);
   const account = result.rows[0];
 
-  if (!account || !await verifyPassword(password, account.password_hash)) {
+  if (!account || !(await verifyPassword(password, account.password_hash))) {
     throw invalid('Неправильна адреса або пароль.', 401);
   }
 
@@ -180,9 +183,11 @@ async function createJob(req, res) {
     throw invalid(error.message);
   }
 
-  if (input.tasks.length > config.maxTasks ||
-      input.resources.length > config.maxResources ||
-      input.iterations > config.maxIterations) {
+  if (
+    input.tasks.length > config.maxTasks ||
+    input.resources.length > config.maxResources ||
+    input.iterations > config.maxIterations
+  ) {
     throw invalid('Перевищено налаштовані ліміти розрахунку.');
   }
 
@@ -192,11 +197,14 @@ async function createJob(req, res) {
     await client.query('BEGIN');
     await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [req.user.id]);
 
-    const activeJobs = await client.query(`
+    const activeJobs = await client.query(
+      `
       SELECT count(*)::int AS count
       FROM jobs
       WHERE user_id=$1 AND status IN ('queued', 'running')
-    `, [req.user.id]);
+    `,
+      [req.user.id]
+    );
 
     if (activeJobs.rows[0].count >= config.maxActiveJobs) {
       throw invalid(
@@ -205,11 +213,14 @@ async function createJob(req, res) {
       );
     }
 
-    const created = await client.query(`
+    const created = await client.query(
+      `
       INSERT INTO jobs(id, user_id, name, input, handled_by)
       VALUES($1, $2, $3, $4, $5)
       RETURNING *
-    `, [randomUUID(), req.user.id, input.name, JSON.stringify(input), config.serverId]);
+    `,
+      [randomUUID(), req.user.id, input.name, JSON.stringify(input), config.serverId]
+    );
 
     const job = created.rows[0];
     await client.query("SELECT pg_notify('tempo_jobs',$1)", [job.id]);
@@ -226,12 +237,15 @@ async function createJob(req, res) {
 }
 
 async function listJobs(req, res) {
-  const result = await query(`
+  const result = await query(
+    `
     SELECT * FROM jobs
     WHERE user_id=$1
     ORDER BY created_at DESC
     LIMIT 50
-  `, [req.user.id]);
+  `,
+    [req.user.id]
+  );
 
   const jobs = await estimates(result.rows);
   res.json({ jobs });
@@ -271,7 +285,8 @@ async function cancelJob(req, res) {
     throw invalid('Розрахунок уже завершено.', 409);
   }
 
-  const result = await query(`
+  const result = await query(
+    `
     UPDATE jobs
     SET status='cancelled',
         cancel_requested=true,
@@ -283,7 +298,9 @@ async function cancelJob(req, res) {
         END
     WHERE id=$1 AND status IN ('queued', 'running')
     RETURNING *
-  `, [job.id]);
+  `,
+    [job.id]
+  );
 
   const cancelledJob = result.rows[0];
   if (!cancelledJob) {
@@ -306,12 +323,16 @@ async function streamJobProgress(req, res) {
   let previousSnapshot = '';
 
   async function sendUpdate() {
-    if (closed || busy) return;
+    if (closed || busy) {
+      return;
+    }
     busy = true;
 
     try {
       const result = await query('SELECT * FROM jobs WHERE id=$1', [job.id]);
-      if (!result.rows[0]) return res.end();
+      if (!result.rows[0]) {
+        return res.end();
+      }
 
       const jobsWithEstimates = await estimates(result.rows);
       job = jobsWithEstimates[0];
@@ -325,15 +346,21 @@ async function streamJobProgress(req, res) {
         res.end();
       }
     } catch {
-      if (!closed) res.end();
+      if (!closed) {
+        res.end();
+      }
     } finally {
       busy = false;
     }
   }
 
-  const updates = setInterval(() => { void sendUpdate(); }, 750);
+  const updates = setInterval(() => {
+    void sendUpdate();
+  }, 750);
   const keepalive = setInterval(() => {
-    if (!closed) res.write(': keepalive\n\n');
+    if (!closed) {
+      res.write(': keepalive\n\n');
+    }
   }, 15000);
 
   res.once('close', () => {
@@ -376,18 +403,22 @@ function remainingTime(job) {
   const progress = Math.max(0, Math.min(99, job.progress));
 
   if (progress > 5) {
-    return Math.max(1000, elapsed * (100 - progress) / progress);
+    return Math.max(1000, (elapsed * (100 - progress)) / progress);
   }
 
   return Math.max(1000, estimateDuration(job.input) - elapsed);
 }
 
 async function estimates(jobs) {
-  if (!jobs.some(job => job.status === 'queued')) return jobs;
+  if (!jobs.some((job) => job.status === 'queued')) {
+    return jobs;
+  }
 
   const [queuedResult, workersResult, runningResult] = await Promise.all([
     query("SELECT id,input FROM jobs WHERE status='queued' ORDER BY created_at,id"),
-    query("SELECT count(*)::int AS count FROM nodes WHERE kind='worker' AND last_seen>now()-interval '12 seconds'"),
+    query(
+      "SELECT count(*)::int AS count FROM nodes WHERE kind='worker' AND last_seen>now()-interval '12 seconds'"
+    ),
     query("SELECT input,progress,started_at FROM jobs WHERE status='running'")
   ]);
 
@@ -411,8 +442,10 @@ async function estimates(jobs) {
     });
   }
 
-  return jobs.map(job => {
-    if (job.status !== 'queued') return job;
+  return jobs.map((job) => {
+    if (job.status !== 'queued') {
+      return job;
+    }
 
     const estimate = positions.get(job.id) || {
       queue_position: null,
@@ -460,7 +493,9 @@ function apiNotFound(req, res) {
 }
 
 function handleError(error, req, res, next) {
-  if (res.headersSent) return next(error);
+  if (res.headersSent) {
+    return next(error);
+  }
 
   if (error.type === 'entity.too.large') {
     return res.status(413).json({ error: 'Надто великий запит.' });
@@ -470,11 +505,11 @@ function handleError(error, req, res, next) {
   }
 
   const status = error.status || 500;
-  if (status >= 500) console.error(error);
+  if (status >= 500) {
+    console.error(error);
+  }
 
-  const message = status >= 500
-    ? 'Сервер тимчасово недоступний. Спробуйте ще раз.'
-    : error.message;
+  const message = status >= 500 ? 'Сервер тимчасово недоступний. Спробуйте ще раз.' : error.message;
 
   res.status(status).json({ error: message });
 }
@@ -482,7 +517,7 @@ function handleError(error, req, res, next) {
 async function heartbeat() {
   const now = performance.now();
   const cpu = process.cpuUsage();
-  const usedMicroseconds = (cpu.user - previousCpu.user) + (cpu.system - previousCpu.system);
+  const usedMicroseconds = cpu.user - previousCpu.user + (cpu.system - previousCpu.system);
   const elapsedMilliseconds = now - previousTime;
   const percent = usedMicroseconds / (elapsedMilliseconds * 10);
 
@@ -492,12 +527,15 @@ async function heartbeat() {
   const cpuPercent = Math.min(100, Math.max(0, percent));
   const memoryMb = process.memoryUsage().rss / 1024 / 1024;
 
-  await query(`
+  await query(
+    `
     INSERT INTO nodes(id, kind, last_seen, cpu_percent, memory_mb)
     VALUES($1, 'api', now(), $2, $3)
     ON CONFLICT(id) DO UPDATE
     SET last_seen=now(), cpu_percent=$2, memory_mb=$3
-  `, [config.serverId, cpuPercent, memoryMb]);
+  `,
+    [config.serverId, cpuPercent, memoryMb]
+  );
 }
 
 async function startServer() {
@@ -509,14 +547,14 @@ async function startServer() {
   await heartbeat();
 
   heartbeats = setInterval(() => {
-    heartbeat().catch(error => console.error(error.message));
+    heartbeat().catch((error) => console.error(error.message));
   }, 2000);
 
   server = app.listen(config.port, config.host, () => {
     console.log(`${config.serverId} listening on http://${config.host}:${config.port}`);
   });
 
-  server.on('connection', socket => {
+  server.on('connection', (socket) => {
     connections.add(socket);
     socket.once('close', () => connections.delete(socket));
   });
